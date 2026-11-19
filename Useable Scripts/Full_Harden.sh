@@ -1,3 +1,4 @@
+#!/bin/bash
 #Unstable Services Check
 echo "=== CyberPatriot Service Checker ==="
 echo "Active services:"
