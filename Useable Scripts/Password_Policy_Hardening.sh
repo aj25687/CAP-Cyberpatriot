@@ -88,11 +88,19 @@ echo -e "\n${GREEN}Configuring account lockout policies...${NC}"
 backup_file "/etc/pam.d/common-auth"
 
 # Check if pam_tally2 or pam_faillock is available
-if [ -f /lib/*/security/pam_tally2.so ]; then
+if [ -f /lib/x86_64-linux-gnu/security/pam_tally2.so ] || [ -f /usr/lib/x86_64-linux-gnu/security/pam_tally2.so ] || [ -f /lib/security/pam_tally2.so ]; then
     # Use pam_tally2 for older systems
     if ! grep -q "pam_tally2.so" /etc/pam.d/common-auth; then
         sed -i '1i auth required pam_tally2.so deny=5 unlock_time=1800 onerr=fail audit even_deny_root' /etc/pam.d/common-auth
     fi
+    # ... (unlock helper setup) ...
+elif [ -f /lib/x86_64-linux-gnu/security/pam_faillock.so ] || [ -f /usr/lib/x86_64-linux-gnu/security/pam_faillock.so ] || [ -f /lib/security/pam_faillock.so ]; then
+    # Use pam_faillock for newer systems
+    backup_file "/etc/security/faillock.conf"
+    # ... (faillock setup) ...
+else
+    echo -e "${YELLOW}WARNING: Neither pam_tally2 nor pam_faillock is available. Account lockout cannot be configured.${NC}"
+fi
     
     # Create unlock command helper
     cat > /usr/local/bin/unlock-account << 'EOF'
@@ -169,11 +177,10 @@ echo "Password generator created. Run 'generate-strong-password' to create a str
 echo -e "\n${GREEN}Creating PAM configuration checker...${NC}"
 cat > /usr/local/bin/check-pam-config << 'EOF'
 #!/bin/bash
-# Check PAM configuration for security settings
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 RED='\033[0;31m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
 echo -e "${GREEN}=== PAM Configuration Security Check ===${NC}"
 
